@@ -58,14 +58,16 @@
 </head>
 <body>
 
+  <!-- SCREEN 1: GATEWAY LOGIN -->
   <div id="loginScreen" class="screen active">
     <h2>Unlock Phonetic Matrix</h2>
     <p>Please enter your UPI / Google Pay Transaction ID (₹10 entry token fee) to proceed.</p>
-    <input type="text" id="txIdInput" placeholder="Enter Transaction ID" autocomplete="off">
+    <input type="text" id="txIdInput" placeholder="Fetching latest Txn ID..." autocomplete="off">
     <button id="unlockBtn" onclick="verifyPayment()">Verify & Play</button>
     <div id="statusMsg" class="status-msg"></div>
   </div>
 
+  <!-- SCREEN 2: GAME SCREEN -->
   <div id="gameScreen" class="screen">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
       <h3 style="margin:0; color: var(--primary);">Magic Matrix</h3>
@@ -106,12 +108,34 @@
       auth: { persistSession: false }
     });
 
-    let sessionToken = localStorage.getItem("activeSession");
-    if(sessionToken) {
-      document.getElementById('loginScreen').classList.remove('active');
-      document.getElementById('gameScreen').classList.add('active');
-      initGame();
+    async function fetchFirstTxnId() {
+      try {
+        const { data, error } = await supabase
+          .from('transactions')
+          .select('txn_id')
+          .order('id', { ascending: true })
+          .limit(1);
+
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+          document.getElementById('txIdInput').value = data[0].txn_id;
+        }
+      } catch (err) {
+        console.error("Error autofilling txn_id:", err);
+      }
     }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      let sessionToken = localStorage.getItem("activeSession");
+      if(sessionToken) {
+        document.getElementById('loginScreen').classList.remove('active');
+        document.getElementById('gameScreen').classList.add('active');
+        initGame();
+      } else {
+        fetchFirstTxnId();
+      }
+    });
 
     async function verifyPayment() {
       const txId = document.getElementById('txIdInput').value.trim();
@@ -182,6 +206,7 @@
       window.location.reload(); 
     } 
 
+    // --- GAME LOGIC SYSTEM ---
     const BASE_FORMULA_MAP = [ 
       ['H', 'R', 'H', 'T', 'Chh'], 
       ['P', 'Chh', 'Bh', 'J', 'J'], 
@@ -249,6 +274,7 @@
         });
       });
 
+      // Interchange Horizontal Matrix Rows Positions (Rule 1)
       rowShuffleOrder = [0, 1, 2, 3];
       for (let i = rowShuffleOrder.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -315,4 +341,4 @@
     }
   </script>
 </body>
-</html>
+  </html>
