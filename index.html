@@ -6,7 +6,7 @@
     <title>Phonetic Card Magic</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#4F46E5">
-    <script src="https://jsdelivr.net"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --primary: #4f46e5; --bg: #0f172a; --card-bg: #1e293b; }
         body { margin: 0; font-family: system-ui, sans-serif; background: var(--bg); color: #fff; display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding: 20px; box-sizing: border-box; }
@@ -57,8 +57,14 @@
     </div>
 
     <script>
-        const SUPABASE_URL = "https://hillqczttgamaxsqdsod.supabase.co"; const SUPABASE_KEY = "sb_publishable_JraFGI8YYVkddUZ2o5GH0Q_P_9n1QaD"; let supabase = null; try { if(window.supabase) supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); } catch(e){} let sessionToken = localStorage.getItem("activeSession"); 
+        const SUPABASE_URL = "https://hillqczttgamaxsqdsod.supabase.co";
+        const SUPABASE_KEY = "sb_publishable_JraFGI8YYVkddUZ2o5GH0Q_P_9n1QaD";
         
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+            auth: { persistSession: false }
+        });
+
+        let sessionToken = localStorage.getItem("activeSession");
         if(sessionToken) {
             document.getElementById('loginScreen').classList.remove('active');
             document.getElementById('gameScreen').classList.add('active');
@@ -81,8 +87,7 @@
                     .eq('txn_id', txId);
 
                 if (error) {
-                    alert("Database connection error! Check your network connection.");
-                    console.error(error);
+                    alert("Database connection error: " + error.message);
                     return;
                 }
 
@@ -106,7 +111,7 @@
                 proceedToGame(txId);
 
             } catch (err) {
-                alert("An unexpected validation failure occurred. Check browser console.");
+                alert("Validation processing error occurred.");
                 console.error(err);
             }
         }
