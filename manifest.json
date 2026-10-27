@@ -1,1 +1,17 @@
- { "short_name": "PhoneticMagic", "name": "Phonetic Card Mindreader Game", "icons": [ { "src": "https://via.placeholder.com/512", "type": "image/png", "sizes": "512x512" } ], "start_url": "./index.html", "background_color": "#0f172a", "theme_color": "#4f46e5", "display": "standalone", "orientation": "portrait" } 
+
+{
+  "short_name": "PhoneticMagic",
+  "name": "Phonetic Card Mindreader Game",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/1055/1055815.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "./index.html",
+  "background_color": "#0f172a",
+  "theme_color": "#4f46e5",
+  "display": "standalone",
+  "orientation": "portrait"
+}
