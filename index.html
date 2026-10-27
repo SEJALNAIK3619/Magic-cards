@@ -113,16 +113,18 @@
         const { data, error } = await supabase
           .from('transactions')
           .select('txn_id')
-          .order('id', { ascending: true })
           .limit(1);
 
         if (error) throw error;
 
-        if (data && data.length > 0) {
+        if (data && data.length > 0 && data[0].txn_id) {
           document.getElementById('txIdInput').value = data[0].txn_id;
+        } else {
+          document.getElementById('txIdInput').value = "test12345";
         }
       } catch (err) {
-        console.error("Error autofilling txn_id:", err);
+        console.error("Autofill background process encountered an issue:", err);
+        document.getElementById('txIdInput').value = "test12345";
       }
     }
 
@@ -274,7 +276,6 @@
         });
       });
 
-      // Interchange Horizontal Matrix Rows Positions (Rule 1)
       rowShuffleOrder = [0, 1, 2, 3];
       for (let i = rowShuffleOrder.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
