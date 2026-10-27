@@ -57,15 +57,8 @@
     </div>
 
     <script>
-        // Filled with your exact live project settings
-        const SUPABASE_URL = "https://supabase.co";
-        const SUPABASE_KEY = "sb_publishable_JraFGI8YYVkddUZ2o5GH0Q_P_9n1QaD";
+        const SUPABASE_URL = "https://hillqczttgamaxsqdsod.supabase.co"; const SUPABASE_KEY = "sb_publishable_JraFGI8YYVkddUZ2o5GH0Q_P_9n1QaD"; let supabase = null; try { if(window.supabase) supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); } catch(e){} let sessionToken = localStorage.getItem("activeSession"); 
         
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-            auth: { persistSession: false }
-        });
-
-        let sessionToken = localStorage.getItem("activeSession");
         if(sessionToken) {
             document.getElementById('loginScreen').classList.remove('active');
             document.getElementById('gameScreen').classList.add('active');
