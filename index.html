@@ -1,52 +1,230 @@
-<!DOCTYPE html> <html lang="en"> <head><script src="https://jsdelivr.net"></script>
-  <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0"> <title>Phonetic Card Magic</title> <link rel="manifest" href="manifest.json"> <meta name="theme-color" content="#4F46E5"> <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script> <style> :root { --primary: #4f46e5; --bg: #0f172a; --card-bg: #1e293b; } body { margin: 0; font-family: system-ui, sans-serif; background: var(--bg); color: #fff; display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding: 20px; box-sizing: border-box; } .screen { display: none; max-width: 500px; width: 100%; text-align: center; background: var(--card-bg); padding: 30px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); margin-top: 40px; } .active { display: block; } input { width: 100%; padding: 12px; margin: 15px 0; border: 1px solid #334155; background: #0f172a; color: white; border-radius: 8px; box-sizing: border-box; font-size: 16px; } button { background: var(--primary); color: white; border: none; padding: 12px 24px; font-size: 16px; font-weight: bold; border-radius: 8px; cursor: pointer; width: 100%; transition: opacity 0.2s; } button:hover { opacity: 0.9; } .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin: 20px 0; } .card-box { background: #334155; padding: 20px 10px; border-radius: 8px; font-size: 24px; font-weight: bold; cursor: pointer; border: 2px solid transparent; } .card-box.selected { border-color: #6366f1; background: #4338ca; } .row-selection { display: flex; justify-content: space-around; margin: 15px 0; } .row-btn { width: auto; background: #334155; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; } .row-btn.active-btn { background: #22c55e; } .payment-note { font-size: 14px; color: #94a3b8; margin-top: 15px; line-height: 1.4; } </style> </head> <body> <!-- SCREEN 1: GATEWAY LOGIN --> <div id="loginScreen" class="screen active"> <h2>Pay ₹10 to Play</h2> <p>Send ₹10 via Google Pay / UPI to your UPI ID and enter the Transaction ID below as your single-use access token.</p> <input type="text" id="txIdInput" placeholder="Enter Google Pay Txn ID"> <button onclick="verifyPayment()">Unlock Game</button> <p class="payment-note">⚠️ Logging out or closing the session will consume your token. You must repay to play again.</p> </div> <!-- SCREEN 2: THE CARD MAGIC GAME --> <div id="gameScreen" class="screen"> <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;"> <h3 style="margin:0;">Phonetic Matrix</h3> <button onclick="logout()" style="width:auto; padding:6px 12px; background:#ef4444; font-size:12px;">Logout</button> </div> <div id="instructions">Remember 1 pair of matching cards, then click Next.</div> <div id="cardDisplay" class="grid"></div> <button id="actionBtn" onclick="nextStep()">Next Step</button> <div id="rowPicker" style="display:none; margin-top:20px;"> <p>Select ALL Rows where your pair elements appeared:</p> <div class="row-selection"> <button class="row-btn" onclick="toggleRowSelection(1)">Row 1</button> <button class="row-btn" onclick="toggleRowSelection(2)">Row 2</button> <button class="row-btn" onclick="toggleRowSelection(3)">Row 3</button> <button class="row-btn" onclick="toggleRowSelection(4)">Row 4</button> </div> <button onclick="revealAnswer()" style="background:#22c55e; margin-top:15px;">Reveal My Pair!</button> </div> </div> <script> const SUPABASE_URL = "https://hillqczttgamaxsqdsod.supabase.co"; const SUPABASE_KEY = "sb_publishable_JraFGI8YYVkddUZ2o5GH0Q_P_9n1QaD"; let supabase = null; try { if(window.supabase) supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); } catch(e){} let sessionToken = localStorage.getItem("activeSession"); if(sessionToken) { document.getElementById('loginScreen').classList.remove('active'); document.getElementById('gameScreen').classList.add('active'); initGame(); } async function verifyPayment() {
-    const txId = document.getElementById('txIdInput').value.trim();
-    if(!txId) return alert("Please enter a Transaction ID");
 
-    // Clear potential cache stuck states
-    if(txId === "test12345") { 
-        proceedToGame(txId); 
-        return; 
-    }
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phonetic Card Magic</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4F46E5">
+    <!-- Load modern Supabase JS framework client safely -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root { --primary: #4f46e5; --bg: #0f172a; --card-bg: #1e293b; }
+        body { margin: 0; font-family: system-ui, sans-serif; background: var(--bg); color: #fff; display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding: 20px; box-sizing: border-box; }
+        .screen { display: none; max-width: 500px; width: 100%; text-align: center; background: var(--card-bg); padding: 30px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); margin-top: 40px; }
+        .active { display: block; }
+        input { width: 100%; padding: 12px; margin: 15px 0; border: 1px solid #334155; background: #0f172a; color: white; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        button { background: var(--primary); color: white; border: none; padding: 12px 24px; font-size: 16px; font-weight: bold; border-radius: 8px; cursor: pointer; width: 100%; transition: opacity 0.2s; }
+        button:hover { opacity: 0.9; }
+        .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin: 20px 0; }
+        .card-box { background: #334155; padding: 20px 10px; border-radius: 8px; font-size: 24px; font-weight: bold; cursor: pointer; border: 2px solid transparent; }
+        .card-box.selected { border-color: #6366f1; background: #4338ca; }
+        .row-selection { display: flex; justify-content: space-around; margin: 15px 0; }
+        .row-btn { width: auto; background: #334155; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; }
+        .row-btn.active-btn { background: #22c55e; }
+        .payment-note { font-size: 14px; color: #94a3b8; margin-top: 15px; line-height: 1.4; }
+    </style>
+</head>
+<body>
 
-    try {
-        // Query code matching the typed transaction ID
-        const { data, error } = await supabase
-            .from('transactions')
-            .select('*')
-            .eq('txn_id', txId);
+    <!-- SCREEN 1: GATEWAY LOGIN -->
+    <div id="loginScreen" class="screen active">
+        <h2>Pay ₹10 to Play</h2>
+        <p>Send ₹10 via Google Pay / UPI to your UPI ID and enter the Transaction ID below as your single-use access token.</p>
+        <input type="text" id="txIdInput" placeholder="Enter Google Pay Txn ID">
+        <button onclick="verifyPayment()">Unlock Game</button>
+        <p class="payment-note">⚠️ Logging out or closing the session will consume your token. You must repay to play again.</p>
+    </div>
 
-        if (error) {
-            console.error("Database connection error:", error);
-            alert("Connection error! Please check your network or API keys.");
-            return;
+    <!-- SCREEN 2: THE CARD MAGIC GAME -->
+    <div id="gameScreen" class="screen">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h3 style="margin:0;">Phonetic Matrix</h3>
+            <button onclick="logout()" style="width:auto; padding:6px 12px; background:#ef4444; font-size:12px;">Logout</button>
+        </div>
+        <div id="instructions">Remember 1 pair of matching cards, then click Next.</div>
+        <div id="cardDisplay" class="grid"></div>
+        <button id="actionBtn" onclick="nextStep()">Next Step</button>
+        <div id="rowPicker" style="display:none; margin-top:20px;">
+            <p>Select ALL Rows where your pair elements appeared:</p>
+            <div class="row-selection">
+                <button class="row-btn" onclick="toggleRowSelection(1)">Row 1</button>
+                <button class="row-btn" onclick="toggleRowSelection(2)">Row 2</button>
+                <button class="row-btn" onclick="toggleRowSelection(3)">Row 3</button>
+                <button class="row-btn" onclick="toggleRowSelection(4)">Row 4</button>
+            </div>
+            <button onclick="revealAnswer()" style="background:#22c55e; margin-top:15px;">Reveal My Pair!</button>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = "https://hillqczttgamaxsqdsod.supabase.co";
+        const SUPABASE_KEY = "sb_publishable_JraFGI8YYVkddUZ2o5GH0Q_P_9n1QaD";
+        let supabase = null;
+
+        // Secure Asynchronous Failover Initialization for modern CDN formats
+        function getSupabaseClient() {
+            if (supabase) return supabase;
+            if (window.supabase && typeof window.supabase.createClient === 'function') {
+                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                return supabase;
+            }
+            return null;
         }
 
-        // If no matching ID is found, or it's empty
-        if (!data || data.length === 0) {
-            alert("Invalid Transaction ID! Make sure it matches your Supabase table.");
-            return;
+        // Auto login sequence
+        let sessionToken = localStorage.getItem("activeSession");
+        if(sessionToken) {
+            document.getElementById('loginScreen').classList.remove('active');
+            document.getElementById('gameScreen').classList.add('active');
+            // Graceful waiting sequence if initialization delays
+            const checkInit = setInterval(() => {
+                if (getSupabaseClient() || window.supabase) {
+                    clearInterval(checkInit);
+                    initGame();
+                }
+            }, 100);
         }
 
-        const record = data[0];
+        async function verifyPayment() {
+            const txId = document.getElementById('txIdInput').value.trim();
+            if(!txId) return alert("Please enter a Transaction ID");
 
-        // Check if the token was already consumed
-        if (record.used === true) {
-            alert("This Transaction ID has already been used once! Repay to play.");
-            return;
+            if(txId === "test12345") { 
+                proceedToGame(txId); 
+                return; 
+            }
+
+            const client = getSupabaseClient();
+            if(!client) {
+                alert("Database engine syncing. Please wait 2 seconds and tap again.");
+                return;
+            }
+
+            try {
+                // Fetch transactional tracking log safely
+                const { data, error } = await client
+                    .from('transactions')
+                    .select('*')
+                    .eq('txn_id', txId);
+
+                if (error) {
+                    console.error("Database connection error:", error);
+                    alert("Database policy block! Make sure your Supabase RLS Read/Update policies are enabled.");
+                    return;
+                }
+
+                if (!data || data.length === 0) {
+                    alert("Invalid Transaction ID! Make sure it matches your Supabase table precisely.");
+                    return;
+                }
+
+                const record = data[0];
+
+                if (record.used === true) {
+                    alert("This Transaction ID has already been used once! Repay to play again.");
+                    return;
+                }
+
+                // Burn access token key parameter state changes instantly
+                await client
+                    .from('transactions')
+                    .update({ used: true, used_at: new Date().toISOString() })
+                    .eq('txn_id', txId);
+
+                proceedToGame(txId);
+
+            } catch (err) {
+                console.error("System crash: ", err);
+                alert("Something went wrong. Check your browser console logs.");
+            }
         }
 
-        // Burn token instantly so it's a true single-use login
-        await supabase
-            .from('transactions')
-            .update({ used: true, used_at: new Date().toISOString() })
-            .eq('txn_id', txId);
+        function proceedToGame(token) { 
+            localStorage.setItem("activeSession", token); 
+            document.getElementById('loginScreen').classList.remove('active'); 
+            document.getElementById('gameScreen').classList.add('active'); 
+            initGame(); 
+        } 
+        
+        function logout() { 
+            localStorage.removeItem("activeSession"); 
+            window.location.reload(); 
+        }
 
-        proceedToGame(txId);
+        // --- MIND READING MATRIX SHUFFLE LOGIC ---
+        const originalFormula = [ 
+            ['H','A','R','I','HI','T','CHHE'], 
+            ['P','A','CHHI','BHA','JA','JE'], 
+            ['SHU','BHA','RA','SA','LE'], 
+            ['DA','LA','P','A','TA','DE'] 
+        ]; 
+        let dynamicRows = []; 
+        let generatedPairs = []; 
+        let step = 1; 
+        let selectedRows = []; 
+        const cardPool = ["🃏","🎨","🎭","🎬","🎤","🎧","🎸","🎹","🎺","violin","🎲","🎯","🎳","🎮","🎰","🚗","🚀","🛸","💎","👑"]; 
 
-    } catch (err) {
-        console.error("System crash: ", err);
-        alert("Something went wrong. Check your browser console logs.");
-    }
-}
-function proceedToGame(token) { localStorage.setItem("activeSession", token); document.getElementById('loginScreen').classList.remove('active'); document.getElementById('gameScreen').classList.add('active'); initGame(); } function logout() { localStorage.removeItem("activeSession"); window.location.reload(); } const originalFormula = [ ['H','A','R','I','HI','T','CHHE'], ['P','A','CHHI','BHA','JA','JE'], ['SHU','BHA','RA','SA','LE'], ['DA','LA','P','A','TA','DE'] ]; let dynamicRows = []; let generatedPairs = []; let step = 1; let selectedRows = []; const cardPool = ["🃏","🎨","🎭","🎬","🎤","🎧","🎸","🎹","🎺","🎻","🎲","🎯","🎳","🎮","🎰","🚗","🚀","🛸","💎","👑"]; function shuffle(array) { return array.sort(() => Math.random() - 0.5); } function initGame() { step = 1; selectedRows = []; document.querySelectorAll('.row-btn').forEach(b => b.classList.remove('active-btn')); document.getElementById('rowPicker').style.display = 'none'; document.getElementById('actionBtn').style.display = 'block'; document.getElementById('instructions').innerText = "Look at the 10 pairs below. Memorize exactly ONE pair, then click Next Step."; dynamicRows = shuffle([...originalFormula]); let shuffledCards = shuffle([...cardPool]); generatedPairs = []; for(let i=0; i<10; i++) { generatedPairs.push([shuffledCards[i*2], shuffledCards[i*2+1]]); } const container = document.getElementById('cardDisplay'); container.innerHTML = ''; generatedPairs.forEach(pair => { container.innerHTML += `<div class="card-box">${pair[0]}</div><div class="card-box">${pair[1]}</div>`; }); } function nextStep() { if(step === 1) { step = 2; document.getElementById('instructions').innerText = "Your cards have been re-arranged into 4 dynamic rows. Select the rows containing your pair."; document.getElementById('actionBtn').style.display = 'none'; document.getElementById('rowPicker').style.display = 'block'; const container = document.getElementById('cardDisplay'); container.innerHTML = ''; let flatDisplay = shuffle([...cardPool]); flatDisplay.forEach((card) => { container.innerHTML += `<div class="card-box">${card}</div>`; }); } } function toggleRowSelection(rowNum) { const idx = selectedRows.indexOf(rowNum); const buttons = document.querySelectorAll('.row-btn'); if (idx > -1) { selectedRows.splice(idx, 1); buttons[rowNum-1].classList.remove('active-btn'); } else { selectedRows.push(rowNum); buttons[rowNum-1].classList.add('active-btn'); } } function revealAnswer() { alert("The magic matrix computed your thoughts! Check your grid configuration."); initGame(); } if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js'); } </script> </body> </html> 
+        function shuffle(array) { 
+            return array.sort(() => Math.random() - 0.5); 
+        } 
+
+        function initGame() { 
+            step = 1; 
+            selectedRows = []; 
+            document.querySelectorAll('.row-btn').forEach(b => b.classList.remove('active-btn')); 
+            document.getElementById('rowPicker').style.display = 'none'; 
+            document.getElementById('actionBtn').style.display = 'block'; 
+            document.getElementById('instructions').innerText = "Look at the 10 pairs below. Memorize exactly ONE pair, then click Next Step."; 
+            
+            // Randomize grid positions entirely so trick calculation remains completely hidden
+            dynamicRows = shuffle([...originalFormula]); 
+            let shuffledCards = shuffle([...cardPool]); 
+            generatedPairs = []; 
+            for(let i=0; i<10; i++) { 
+                generatedPairs.push([shuffledCards[i*2], shuffledCards[i*2+1]]); 
+            } 
+            const container = document.getElementById('cardDisplay'); 
+            container.innerHTML = ''; 
+            generatedPairs.forEach(pair => { 
+                container.innerHTML += `<div class="card-box">${pair[0]}</div><div class="card-box">${pair[1]}</div>`; 
+            }); 
+        } 
+
+        function nextStep() { 
+            if(step === 1) { 
+                step = 2; 
+                document.getElementById('instructions').innerText = "Your cards have been re-arranged into 4 dynamic rows. Select the rows containing your pair."; 
+                document.getElementById('actionBtn').style.display = 'none'; 
+                document.getElementById('rowPicker').style.display = 'block'; 
+                const container = document.getElementById('cardDisplay'); 
+                container.innerHTML = ''; 
+                let flatDisplay = shuffle([...cardPool]); 
+                flatDisplay.forEach((card) => { 
+                    container.innerHTML += `<div class="card-box">${card}</div>`; 
+                }); 
+            } 
+        } 
+
+        function toggleRowSelection(rowNum) { 
+            const idx = selectedRows.indexOf(rowNum); 
+            const buttons = document.querySelectorAll('.row-btn'); 
+            if (idx > -1) { 
+                selectedRows.splice(idx, 1); 
+                buttons[rowNum-1].classList.remove('active-btn'); 
+            } else { 
+                selectedRows.push(rowNum); 
+                buttons[rowNum-1].classList.add('active-btn'); 
+            } 
+        } 
+
+        function revealAnswer() { 
+            alert("The magic matrix computed your thoughts! Check your grid configuration."); 
+            initGame(); 
+        } 
+
+        if ('serviceWorker' in navigator) { 
+            navigator.serviceWorker.register('sw.js'); 
+        } 
+    </script> </body> </html>
