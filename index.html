@@ -1,421 +1,305 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Phonetic Matrix Card Game</title>
-  <style>
-    :root {
-      --bg-dark: #121212;
-      --card-bg: #1e1e1e;
-      --accent: #00e676;
-      --text-main: #ffffff;
-      --text-muted: #b0bec5;
-      --error: #ff5252;
-    }
-
-    body {
-      margin: 0;
-      padding: 0;
-      background-color: var(--bg-dark);
-      color: var(--text-main);
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      min-height: 100vh;
-      box-sizing: border-box;
-    }
-
-    /* --- PAYWALL LAYOUT GATE --- */
-    #paywall-gateway {
-      position: fixed;
-      top: 0; left: 0; width: 100vw; height: 100vh;
-      background: var(--bg-dark);
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      z-index: 9999; padding: 20px; box-sizing: border-box;
-    }
-    .gate-card {
-      background: var(--card-bg); border: 1px solid #333; border-radius: 12px;
-      padding: 30px; width: 100%; max-width: 400px; text-align: center; box-shadow: 0 8px 24px rgba(0,0,0,0.5);
-    }
-    .gate-card h2 { margin-top: 0; color: var(--accent); }
-    .gate-card input {
-      width: 100%; padding: 12px; margin: 15px 0; border-radius: 6px;
-      border: 1px solid #444; background: #2a2a2a; color: #fff; box-sizing: border-box; font-size: 16px;
-    }
-    .gate-card button {
-      width: 100%; padding: 12px; border: none; border-radius: 6px;
-      background: var(--accent); color: #000; font-weight: bold; font-size: 16px; cursor: pointer; transition: background 0.2s;
-    }
-    .gate-card button:disabled { background: #555; cursor: not-allowed; color: #888; }
-    .gate-status { margin-top: 15px; font-size: 14px; min-height: 20px; }
-    .status-error { color: var(--error); }
-    .status-loading { color: var(--text-muted); }
-
-    /* --- MAIN APP UI PANELS --- */
-    #game-container {
-      display: none;
-      width: 100%;
-      max-width: 500px;
-      padding: 16px;
-      box-sizing: border-box;
-      flex-direction: column;
-      align-items: center;
-    }
-    header { text-align: center; margin-bottom: 20px; }
-    header h1 { margin: 0 0 8px 0; font-size: 24px; color: var(--accent); }
-    header p { margin: 0; font-size: 14px; color: var(--text-muted); }
-
-    /* Pairs Stage Styles */
-    .pairs-stage, .matrix-stage { width: 100%; display: none; flex-direction: column; align-items: center; }
-    .active-stage { display: flex; }
-
-    .pairs-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 12px;
-      width: 100%;
-      margin-bottom: 20px;
-    }
-    .pair-bundle {
-      background: var(--card-bg);
-      border: 1px solid #333;
-      border-radius: 8px;
-      padding: 8px;
-      display: flex;
-      justify-content: center;
-      gap: 8px;
-    }
-
-    /* Playing Matrix Grid Styles */
-    .matrix-grid {
-      display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      gap: 8px;
-      width: 100%;
-      margin-bottom: 20px;
-    }
-
-    /* Playing Card Graphics Blueprint */
-    .card-ui {
-      background: #ffffff;
-      color: #000000;
-      border-radius: 6px;
-      aspect-ratio: 2.5 / 3.5;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      padding: 6px;
-      box-sizing: border-box;
-      font-weight: bold;
-      font-size: 16px;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-      user-select: none;
-    }
-    .card-ui.suit-red { color: #e53935; }
-    .card-ui.suit-black { color: #212121; }
-    .card-ui .card-top { align-self: flex-start; line-height: 1; }
-    .card-ui .card-suit-center { align-self: center; font-size: 24px; line-height: 1; }
-
-    /* Control Mechanics Button Row */
-    .btn-action {
-      background: var(--accent);
-      color: #000;
-      border: none;
-      padding: 14px 28px;
-      font-size: 16px;
-      font-weight: bold;
-      border-radius: 8px;
-      cursor: pointer;
-      width: 100%;
-      box-sizing: border-box;
-    }
-
-    /* Checkbox list for matrix choice verification loops */
-    .row-selector-group {
-      width: 100%;
-      background: var(--card-bg);
-      border-radius: 8px;
-      padding: 12px;
-      box-sizing: border-box;
-      margin-bottom: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-    .row-option {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      font-size: 16px;
-      cursor: pointer;
-    }
-    .row-option input { width: 20px; height: 20px; accent-color: var(--accent); }
-
-    /* Output banner overlay styling layout */
-    .reveal-banner {
-      background: #2e7d32;
-      border: 2px solid var(--accent);
-      border-radius: 8px;
-      padding: 16px;
-      width: 100%;
-      box-sizing: border-box;
-      text-align: center;
-      margin-top: 15px;
-      display: none;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phonetic Card Magic</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4F46E5">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root { --primary: #4f46e5; --bg: #0f172a; --card-bg: #1e293b; --accent: #6366f1; }
+        body { margin: 0; font-family: system-ui, sans-serif; background: var(--bg); color: #fff; display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding: 20px; box-sizing: border-box; }
+        .screen { display: none; max-width: 500px; width: 100%; text-align: center; background: var(--card-bg); padding: 30px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); margin-top: 40px; }
+        .active { display: block; }
+        input { width: 100%; padding: 12px; margin: 15px 0; border: 1px solid #334155; background: #0f172a; color: white; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        button { background: var(--primary); color: white; border: none; padding: 12px 24px; font-size: 16px; font-weight: bold; border-radius: 8px; cursor: pointer; width: 100%; transition: opacity 0.2s; }
+        button:hover { opacity: 0.9; }
+        .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin: 20px 0; }
+        
+        /* Stylized Playing Card UI elements */
+        .card-box { 
+            background: #ffffff; 
+            color: #000000; 
+            aspect-ratio: 2.5 / 3.5; 
+            border-radius: 8px; 
+            font-size: 18px; 
+            font-weight: bold; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: space-between; 
+            padding: 8px; 
+            box-sizing: border-box; 
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2); 
+            user-select: none;
+            text-align: left;
+        }
+        .card-box.suit-red { color: #dc2626; }
+        .card-box.suit-black { color: #0f172a; }
+        .card-box .card-top { line-height: 1; font-size: 16px; }
+        .card-box .card-center { align-self: center; font-size: 28px; line-height: 1; }
+        
+        .row-selection { display: flex; justify-content: space-around; margin: 15px 0; gap: 8px; }
+        .row-btn { width: 100%; background: #334155; color: white; border: none; padding: 12px 10px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: background 0.2s; }
+        .row-btn.active-btn { background: #22c55e; }
+        .payment-note { font-size: 14px; color: #94a3b8; margin-top: 15px; line-height: 1.4; }
+    </style>
 </head>
 <body>
 
-  <!-- 1. MONETIZATION SIGN IN GATEWAY WALL -->
-  <div id="paywall-gateway">
-    <div class="gate-card">
-      <h2>Phonetic Matrix Card Game</h2>
-      <p>Enter your Google Pay / UPI Transaction ID to unlock the application (Entry: ₹10)</p>
-      <input type="text" id="txn-input" placeholder="Enter Transaction ID" autocomplete="off">
-      <button id="unlock-btn" onclick="verifyAndUnlock()">Verify & Play</button>
-      <div id="status-msg" class="gate-status"></div>
-    </div>
-  </div>
-
-  <!-- 2. CORE SYSTEM GAME INTERFACE CONTAINMENT -->
-  <div id="game-container">
-    <header>
-      <h1>Phonetic Matrix</h1>
-      <p id="game-instructions">Step 1: Choose one pair of cards, remember them closely, then proceed.</p>
-    </header>
-
-    <!-- STAGE 1: Displaying the 10 Selection Pairs -->
-    <div id="pairs-stage" class="pairs-stage active-stage">
-      <div id="pairs-grid" class="pairs-grid"></div>
-      <button class="btn-action" onclick="transitionToMatrixStage()">I Have Selected & Remembered My Pair</button>
+    <!-- SCREEN 1: GATEWAY LOGIN -->
+    <div id="loginScreen" class="screen active">
+        <h2>Pay ₹10 to Play</h2>
+        <p>Send ₹10 via Google Pay / UPI to your UPI ID and enter the Transaction ID below as your single-use access token.</p>
+        <input type="text" id="txIdInput" placeholder="Enter Google Pay Txn ID">
+        <button onclick="verifyPayment()">Unlock Game</button>
+        <p class="payment-note">⚠️ Logging out or closing the session will consume your token. You must repay to play again.</p>
     </div>
 
-    <!-- STAGE 2: Displaying the 4x5 Core Layout Matrix Grid -->
-    <div id="matrix-stage" class="matrix-stage">
-      <div id="matrix-grid" class="matrix-grid"></div>
-      
-      <div class="row-selector-group">
-        <p style="margin:0 0 8px 0; font-weight: bold; color: var(--accent);">Which horizontal rows contain your secret cards?</p>
-        <label class="row-option"><input type="checkbox" class="row-check" value="0"> Row 1 contains a card</label>
-        <label class="row-option"><input type="checkbox" class="row-check" value="1"> Row 2 contains a card</label>
-        <label class="row-option"><input type="checkbox" class="row-check" value="2"> Row 3 contains a card</label>
-        <label class="row-option"><input type="checkbox" class="row-check" value="3"> Row 4 contains a card</label>
-      </div>
-
-      <button class="btn-action" onclick="processMindReadingReveal()">Reveal My Secret Cards</button>
-      
-      <div id="reveal-banner" class="reveal-banner">
-        <h3 style="margin: 0 0 8px 0;">The Matrix Decided!</h3>
-        <p id="reveal-text" style="margin: 0; font-size: 18px; font-weight: bold;"></p>
-        <button class="btn-action" style="background:#fff; color:#000; margin-top:15px; padding:8px;" onclick="restartSessionLoop()">Play Another Round</button>
-      </div>
+    <!-- SCREEN 2: THE CARD MAGIC GAME -->
+    <div id="gameScreen" class="screen">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h3 style="margin:0; color: var(--accent);">Phonetic Matrix</h3>
+            <button onclick="logout()" style="width:auto; padding:6px 12px; background:#ef4444; font-size:12px;">Logout</button>
+        </div>
+        <div id="instructions">Remember 1 pair of matching cards, then click Next.</div>
+        <div id="cardDisplay" class="grid"></div>
+        <button id="actionBtn" onclick="nextStep()">Next Step</button>
+        <div id="rowPicker" style="display:none; margin-top:20px;">
+            <p style="font-weight: bold; margin-bottom: 15px;">Select ALL Rows where your pair elements appeared:</p>
+            <div class="row-selection">
+                <button class="row-btn" onclick="toggleRowSelection(1)">Row 1</button>
+                <button class="row-btn" onclick="toggleRowSelection(2)">Row 2</button>
+                <button class="row-btn" onclick="toggleRowSelection(3)">Row 3</button>
+                <button class="row-btn" onclick="toggleRowSelection(4)">Row 4</button>
+            </div>
+            <button onclick="revealAnswer()" style="background:#22c55e; margin-top:25px;">Reveal My Pair!</button>
+        </div>
     </div>
-  </div>
 
-  <!-- Supabase Module Import Library Layer -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script>
-    // --- SUPABASE CONFIGURATION HUB ---
-    const SUPABASE_URL = "https://your-project-id.supabase.co"; 
-    const SUPABASE_ANON_KEY = "your-anon-public-key";
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-    async function verifyAndUnlock() {
-      const inputField = document.getElementById('txn-input');
-      const unlockBtn = document.getElementById('unlock-btn');
-      const statusMsg = document.getElementById('status-msg');
-      const txnId = inputField.value.trim();
-
-      if (!txnId) {
-        statusMsg.className = "gate-status status-error";
-        statusMsg.innerText = "Please enter a valid Transaction ID.";
-        return;
-      }
-
-      inputField.disabled = true;
-      unlockBtn.disabled = true;
-      statusMsg.className = "gate-status status-loading";
-      statusMsg.innerText = "Verifying transaction record...";
-
-      try {
-        const { data, error } = await supabaseClient
-          .from('transactions')
-          .select('*')
-          .eq('txn_id', txnId);
-
-        if (error) throw error;
-
-        if (!data || data.length === 0) {
-          throw new Error("Transaction ID not found. Verify payment ledger.");
-        }
-
-        const transactionRecord = data[0]; // Access safely without crash loops
-
-        if (transactionRecord.used === true) {
-          throw new Error("This token has already been spent.");
-        }
-
-        const { error: updateError } = await supabaseClient
-          .from('transactions')
-          .update({ used: true, used_at: new Date().toISOString() })
-          .eq('id', transactionRecord.id);
-
-        if (updateError) throw updateError;
-
-        statusMsg.style.color = "var(--accent)";
-        statusMsg.innerText = "Access granted! Initializing layout matrix...";
+    <script>
+        const SUPABASE_URL = "https://hillqczttgamaxsqdsod.supabase.co";
+        const SUPABASE_KEY = "sb_publishable_JraFGI8YYVkddUZ2o5GH0Q_P_9n1QaD";
         
-        setTimeout(() => {
-          document.getElementById('paywall-gateway').remove();
-          document.getElementById('game-container').style.display = 'flex';
-          restartSessionLoop();
-        }, 800);
-
-      } catch (err) {
-        statusMsg.className = "gate-status status-error";
-        statusMsg.innerText = err.message || "Network link failure occurred.";
-        inputField.disabled = false;
-        unlockBtn.disabled = false;
-      }
-    }
-
-    // --- GAME ARCHITECTURE CORE ---
-    const BASE_FORMULA_MAP = [
-      ["H", "R", "H", "T", "Chh"],   
-      ["P", "Chh", "Bh", "J", "J"],
-      ["S", "Bh", "R", "S", "L"],
-      ["D", "L", "P", "T", "D"]
-    ];
-
-    let sessionPairs = {};
-    let liveMatrixGrid = [];
-    let rowShuffleOrder = [0, 1, 2, 3]; // Tracking vector to trace row shuffling interchanging loops
-
-    function renderCardDOM(cardObj) {
-      const isRed = cardObj.suit === "♦" || cardObj.suit === "♥";
-      const colorClass = isRed ? "suit-red" : "suit-black";
-      return `<div class="card-ui ${colorClass}"> <div class="card-top">${cardObj.value}<br>${cardObj.suit}</div> <div class="card-suit-center">${cardObj.suit}</div> </div>`;
-    }
-
-    function createShuffledDeck() {
-      const suits = ["♦", "♥", "♣", "♠"];
-      const values = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
-      const deck = [];
-      for (let suit of suits) {
-        for (let value of values) { deck.push({ suit, value }); }
-      }
-      for (let i = deck.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [deck[i], deck[j]] = [deck[j], deck[i]];
-      }
-      return deck;
-    }
-
-    function restartSessionLoop() {
-      // Clear views and reset UI fields
-      document.getElementById('reveal-banner').style.display = 'none';
-      document.querySelectorAll('.row-check').forEach(el => el.checked = false);
-      document.getElementById('pairs-stage').className = "pairs-stage active-stage";
-      document.getElementById('matrix-stage').className = "matrix-stage";
-      document.getElementById('game-instructions').innerText = "Step 1: Choose one pair of cards, remember them closely, then proceed.";
-
-      const fullDeck = createShuffledDeck();
-      const formulaKeys = ["H", "R", "T", "Chh", "P", "Bh", "J", "S", "L", "D"];
-      sessionPairs = {};
-
-      formulaKeys.forEach((key, index) => {
-        sessionPairs[key] = {
-          cardA: fullDeck[index * 2],
-          cardB: fullDeck[index * 2 + 1]
-        };
-      });
-
-      // Generate base matrix elements
-      const placementTracker = {};
-      let baseGrid = BASE_FORMULA_MAP.map(row => {
-        return row.map(key => {
-          const pair = sessionPairs[key];
-          if (!placementTracker[key]) {
-            placementTracker[key] = true;
-            return pair.cardA;
-          } else {
-            return pair.cardB;
-          }
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+            auth: { persistSession: false }
         });
-      });
 
-      // SHUFFLE RULE 1: Completely interchange the row positions dynamically
-      rowShuffleOrder = [0, 1, 2, 3];
-      for (let i = rowShuffleOrder.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [rowShuffleOrder[i], rowShuffleOrder[j]] = [rowShuffleOrder[j], rowShuffleOrder[i]];
-      }
+        let sessionToken = localStorage.getItem("activeSession");
+        if(sessionToken) {
+            document.getElementById('loginScreen').classList.remove('active');
+            document.getElementById('gameScreen').classList.add('active');
+            initGame();
+        }
 
-      // Recompile active layout array matching row shuffle tracking map
-      liveMatrixGrid = rowShuffleOrder.map(originalIndex => baseGrid[originalIndex]);
+        async function verifyPayment() {
+            const txId = document.getElementById('txIdInput').value.trim();
+            if(!txId) return alert("Please enter a Transaction ID");
 
-      // Populate interface outputs
-      const pairsGridDOM = document.getElementById('pairs-grid');
-      pairsGridDOM.innerHTML = Object.values(sessionPairs).map(p => `
-        <div class="pair-bundle"> ${renderCardDOM(p.cardA)} ${renderCardDOM(p.cardB)} </div>
-      `).join('');
-    }
+            if(txId === "test12345") { 
+                proceedToGame(txId); 
+                return; 
+            }
 
-    function transitionToMatrixStage() {
-      document.getElementById('pairs-stage').className = "pairs-stage";
-      document.getElementById('matrix-stage').className = "matrix-stage active-stage";
-      document.getElementById('game-instructions').innerText = "Step 2: Find where your cards landed in the matrix.";
+            try {
+                const { data, error } = await supabase
+                    .from('transactions')
+                    .select('*')
+                    .eq('txn_id', txId);
 
-      const matrixGridDOM = document.getElementById('matrix-grid');
-      matrixGridDOM.innerHTML = liveMatrixGrid.map(row => row.map(card => renderCardDOM(card)).join('')).join('');
-    }
+                if (error) {
+                    alert("Database connection error: " + error.message);
+                    return;
+                }
 
-    function processMindReadingReveal() {
-      // Gather active checked slots
-      const selectedUIRows = Array.from(document.querySelectorAll('.row-check:checked')).map(el => parseInt(el.value));
+                if (!data || data.length === 0) {
+                    alert("Invalid Transaction ID! Make sure it matches your Supabase table perfectly.");
+                    return;
+                }
 
-      if (selectedUIRows.length === 0) {
-        alert("Please tick which rows contain your cards first!");
-        return;
-      }
+                const record = data[0];
 
-      // Map dynamic layout grid choices back to baseline original keys formulas
-      const originalFormulaRowsSelected = selectedUIRows.map(uiRowIdx => rowShuffleOrder[uiRowIdx]);
+                if (record.used === true) {
+                    alert("This Transaction ID has already been used once! Repay to play again.");
+                    return;
+                }
 
-      let identifiedKey = null;
+                await supabase
+                    .from('transactions')
+                    .update({ used: true, used_at: new Date().toISOString() })
+                    .eq('txn_id', txId);
 
-      if (originalFormulaRowsSelected.length === 1) {
-        // Special condition handler: both cards ended up sharing a single row
-        const singleRowIdx = originalFormulaRowsSelected[0];
-        const keyOccurrences = {};
-        BASE_FORMULA_MAP[singleRowIdx].forEach(k => {
-          keyOccurrences[k] = (keyOccurrences[k] || 0) + 1;
-        });
-        identifiedKey = Object.keys(keyOccurrences).find(k => keyOccurrences[k] === 2);
-      } else if (originalFormulaRowsSelected.length === 2) {
-        // Normal condition: cards split across two distinct separate lines
-        const [rA, rB] = originalFormulaRowsSelected;
-        identifiedKey = BASE_FORMULA_MAP[rA].find(key => BASE_FORMULA_MAP[rB].includes(key));
-      }
+                proceedToGame(txId);
 
-      const textTarget = document.getElementById('reveal-text');
-      const banner = document.getElementById('reveal-banner');
+            } catch (err) {
+                alert("Validation processing error occurred.");
+                console.error(err);
+            }
+        }
 
-      if (identifiedKey && sessionPairs[identifiedKey]) {
-        const secretPair = sessionPairs[identifiedKey];
-        textTarget.innerHTML = `
-          You chose the pair:<br><br> 
-          <div style="display:flex; gap:15px; justify-content:center; margin-top:10px;"> 
-            ${renderCardDOM(secretPair.cardA)} ${renderCardDOM(secretPair.cardB)} 
-          </div>`;
-      } else {
-        textTarget.innerText = "Hmm... The matrix couldn't read your selection. Ensure you select all rows containing your cards correctly!";
-      }
-      banner.style.display = 'block';
-    }
-  </script>
-</body>
-    </html>
+        function proceedToGame(token) { 
+            localStorage.setItem("activeSession", token); 
+            document.getElementById('loginScreen').classList.remove('active'); 
+            document.getElementById('gameScreen').classList.add('active'); 
+            initGame(); 
+        } 
+
+        function logout() { 
+            localStorage.removeItem("activeSession"); 
+            window.location.reload(); 
+        } 
+
+        // Core tracking formula matrix maps safely to indices behind the scene
+        const BASE_FORMULA_MAP = [ 
+            ['H','R','H','T','Chh'], 
+            ['P','Chh','Bh','J','J'], 
+            ['S','Bh','R','S','L'], 
+            ['D','L','P','T','D'] 
+        ]; 
+        
+        let liveMatrixGrid = []; 
+        let sessionPairs = {}; 
+        let step = 1; 
+        let selectedRows = []; 
+        let rowShuffleOrder = [0, 1, 2, 3];
+
+        function shuffle(array) { 
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        } 
+
+        function createShuffledDeck() {
+            const suits = ["♦", "♥", "♣", "♠"];
+            const values = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
+            const deck = [];
+            for (let suit of suits) {
+                for (let value of values) { deck.push({ suit, value }); }
+            }
+            return shuffle(deck);
+        }
+
+        function renderCardDOM(cardObj) {
+            const isRed = cardObj.suit === "♦" || cardObj.suit === "♥";
+            const colorClass = isRed ? "suit-red" : "suit-black";
+            return `
+                <div class="card-box ${colorClass}">
+                    <div class="card-top">${cardObj.value}<br>${cardObj.suit}</div>
+                    <div class="card-center">${cardObj.suit}</div>
+                </div>
+            `;
+        }
+
+        function initGame() { 
+            step = 1; 
+            selectedRows = []; 
+            document.querySelectorAll('.row-btn').forEach(b => b.classList.remove('active-btn')); 
+            document.getElementById('rowPicker').style.display = 'none'; 
+            document.getElementById('actionBtn').style.display = 'block'; 
+            document.getElementById('instructions').innerText = "Look at the 10 pairs below. Memorize exactly ONE pair, then click Next Step."; 
+            
+            const fullDeck = createShuffledDeck();
+            const formulaKeys = ["H", "R", "T", "Chh", "P", "Bh", "J", "S", "L", "D"];
+            sessionPairs = {}; 
+
+            formulaKeys.forEach((key, index) => { 
+                sessionPairs[key] = {
+                    cardA: fullDeck[index * 2],
+                    cardB: fullDeck[index * 2 + 1]
+                };
+            }); 
+            
+            const container = document.getElementById('cardDisplay'); 
+            container.innerHTML = ''; 
+            Object.values(sessionPairs).forEach(pair => { 
+                container.innerHTML += renderCardDOM(pair.cardA) + renderCardDOM(pair.cardB); 
+            }); 
+            
+            // Build the live matrix grid layout behind the scenes for Step 2
+            const placementTracker = {};
+            let baseGrid = BASE_FORMULA_MAP.map(row => {
+                return row.map(key => {
+                    const pair = sessionPairs[key];
+                    if (!placementTracker[key]) {
+                        placementTracker[key] = true;
+                        return pair.cardA;
+                    } else {
+                        return pair.cardB;
+                    }
+                });
+            });
+
+            // Shuffle Rule 1: Interchange row configurations completely
+            rowShuffleOrder = [0, 1, 2, 3];
+            shuffle(rowShuffleOrder);
+            liveMatrixGrid = rowShuffleOrder.map(originalIndex => baseGrid[originalIndex]);
+        } 
+
+        function nextStep() { 
+            if(step === 1) { 
+                step = 2; 
+                document.getElementById('instructions').innerText = "Your cards have been re-arranged into 4 dynamic rows. Find your chosen cards in the grid and select all rows containing them."; 
+                document.getElementById('actionBtn').style.display = 'none'; 
+                document.getElementById('rowPicker').style.display = 'block'; 
+                
+                const container = document.getElementById('cardDisplay'); 
+                container.innerHTML = ''; 
+                // Display the compiled 4x5 playing layout matrix cards cleanly in order
+                liveMatrixGrid.forEach(row => {
+                    row.forEach(card => {
+                        container.innerHTML += renderCardDOM(card);
+                    });
+                });
+            } 
+        } 
+
+        function toggleRowSelection(rowNum) { 
+            const idx = selectedRows.indexOf(rowNum - 1); 
+            const buttons = document.querySelectorAll('.row-btn'); 
+            if (idx > -1) { 
+                selectedRows.splice(idx, 1); 
+                buttons[rowNum-1].classList.remove('active-btn'); 
+            } else { 
+                selectedRows.push(rowNum - 1); 
+                buttons[rowNum-1].classList.add('active-btn'); 
+            } 
+        } 
+
+        function revealAnswer() { 
+            if (selectedRows.length === 0) {
+                return alert("Please select which rows contain your cards first!");
+            }
+
+            // Map UI checked row slots back to baseline formula tracking definitions
+            const originalFormulaRowsSelected = selectedRows.map(uiIdx => rowShuffleOrder[uiIdx]);
+            let identifiedKey = null;
+
+            if (originalFormulaRowsSelected.length === 1) {
+                const singleRowIdx = originalFormulaRowsSelected[0];
+                const keyOccurrences = {};
+                BASE_FORMULA_MAP[singleRowIdx].forEach(k => {
+                    keyOccurrences[k] = (keyOccurrences[k] || 0) + 1;
+                });
+                identifiedKey = Object.keys(keyOccurrences).find(k => keyOccurrences[k] === 2);
+            } else if (originalFormulaRowsSelected.length === 2) {
+                const [rA, rB] = originalFormulaRowsSelected;
+                identifiedKey = BASE_FORMULA_MAP[rA].find(key => BASE_FORMULA_MAP[rB].includes(key));
+            }
+
+            if (identifiedKey && sessionPairs[identifiedKey]) {
+                const secretPair = sessionPairs[identifiedKey];
+                alert(`The Magic Matrix computed your thoughts!\n\nYou chose the pair: [ ${secretPair.cardA.value}${secretPair.cardA.suit} ] and [ ${secretPair.cardB.value}${secretPair.cardB.suit} ]`);
+            } else {
+                alert("The matrix couldn't decode your selection. Make sure you selected all rows containing your cards correctly!");
+            }
+            initGame(); 
+        } 
+
+        if ('serviceWorker' in navigator) { 
+            navigator.serviceWorker.register('sw.js'); 
+        } 
+    </script> 
+</body> 
+</html>
