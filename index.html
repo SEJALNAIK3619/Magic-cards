@@ -120,7 +120,7 @@
         if (data && data.length > 0 && data[0].txn_id) {
           document.getElementById('txIdInput').value = data[0].txn_id;
         } else {
-          document.getElementById('txIdInput').value = "test12345";
+          document.getElementById('txIdInput').value = "";
         }
       } catch (err) {
         console.error("Autofill background process encountered an issue:", err);
