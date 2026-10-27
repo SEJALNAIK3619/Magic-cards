@@ -36,12 +36,10 @@
     .status-error { color: #ff5252; }
     .status-loading { color: #94a3b8; }
     
-    /* Grid Layouts */
     .pairs-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: 20px 0; }
     .pair-bundle { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 8px; display: flex; justify-content: center; gap: 8px; }
     .matrix-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin: 20px 0; }
 
-    /* Custom CSS Playing Card Vector Shells */
     .card-ui {
       background: #ffffff; color: #000000; border-radius: 6px; aspect-ratio: 2.5 / 3.5;
       display: flex; flex-direction: column; justify-content: space-between; padding: 6px;
@@ -60,7 +58,6 @@
 </head>
 <body>
 
-  <!-- SCREEN 1: GATEWAY ACCESS SYSTEM -->
   <div id="loginScreen" class="screen active">
     <h2>Unlock Phonetic Matrix</h2>
     <p>Please enter your UPI / Google Pay Transaction ID (₹10 entry token fee) to proceed.</p>
@@ -69,7 +66,6 @@
     <div id="statusMsg" class="status-msg"></div>
   </div>
 
-  <!-- SCREEN 2: MAIN DYNAMIC GAME DECK CONTROLLER -->
   <div id="gameScreen" class="screen">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
       <h3 style="margin:0; color: var(--primary);">Magic Matrix</h3>
@@ -77,13 +73,11 @@
     </div>
     <div id="instructions">Look at the 10 pairs below. Memorize exactly ONE pair, then click Next Step.</div>
     
-    <!-- Stage 1 View: Selection Pairs Container -->
     <div id="pairsStage" style="display: block; width: 100%;">
       <div id="pairsDisplay" class="pairs-grid"></div>
       <button onclick="nextStep()">I Remember My Secret Pair</button>
     </div>
 
-    <!-- Stage 2 View: The Shuffled Matrix Grid Selection Loops -->
     <div id="matrixStage" style="display: none; width: 100%;">
       <div id="matrixDisplay" class="matrix-grid"></div>
       <div class="row-selection">
@@ -105,7 +99,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
-    // --- CONNECTIVITY PARAMETERS Hub ---
     const SUPABASE_URL = "https://hiilqczttgamaxsqdsod.supabase.co";
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhpbGxxY3p0dGdhbWF4c3Fkc29kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMwNTc1OTEsImV4cCI6MjEwODYzMzU5MX0.K0dkV4wPrvfv17GjOapfXOILtydkrwSlBjbg1-WBwgw";
     
@@ -189,7 +182,6 @@
       window.location.reload(); 
     } 
 
-    // --- GAME LOGIC SYSTEM ---
     const BASE_FORMULA_MAP = [ 
       ['H', 'R', 'H', 'T', 'Chh'], 
       ['P', 'Chh', 'Bh', 'J', 'J'], 
@@ -197,9 +189,9 @@
       ['D', 'L', 'P', 'T', 'D'] 
     ]; 
     
-    let liveMatrixGrid =; 
+    let liveMatrixGrid = []; 
     let sessionPairs = {}; 
-    let rowShuffleOrder =; 
+    let rowShuffleOrder = []; 
 
     function renderCardDOM(cardObj) {
       const isRed = cardObj.suit === "♦" || cardObj.suit === "♥";
@@ -215,7 +207,7 @@
     function createShuffledDeck() { 
       const suits = ["♦", "♥", "♣", "♠"];
       const values = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
-      const deck =;
+      const deck = [];
       for (let suit of suits) {
         for (let value of values) { deck.push({ suit, value }); }
       }
@@ -257,8 +249,7 @@
         });
       });
 
-      // Interchange Horizontal Matrix Rows Positions (Rule 1)
-      rowShuffleOrder =;
+      rowShuffleOrder = [0, 1, 2, 3];
       for (let i = rowShuffleOrder.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [rowShuffleOrder[i], rowShuffleOrder[j]] = [rowShuffleOrder[j], rowShuffleOrder[i]];
@@ -295,7 +286,7 @@
       let identifiedKey = null;
 
       if (originalFormulaRowsSelected.length === 1) {
-        const singleRowIdx = originalFormulaRowsSelected;
+        const singleRowIdx = originalFormulaRowsSelected[0];
         const keyOccurrences = {};
         BASE_FORMULA_MAP[singleRowIdx].forEach(k => {
           keyOccurrences[k] = (keyOccurrences[k] || 0) + 1;
