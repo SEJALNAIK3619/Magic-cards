@@ -6,40 +6,24 @@
     <title>Phonetic Card Magic</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#4F46E5">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --primary: #4f46e5; --bg: #0f172a; --card-bg: #1e293b; }
         body { margin: 0; font-family: system-ui, sans-serif; background: var(--bg); color: #fff; display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding: 20px; box-sizing: border-box; }
-        .screen { display: none; max-width: 500px; width: 100%; text-align: center; background: var(--card-bg); padding: 30px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); margin-top: 40px; }
-        .active { display: block; }
-        input { width: 100%; padding: 12px; margin: 15px 0; border: 1px solid #334155; background: #0f172a; color: white; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
-        button { background: var(--primary); color: white; border: none; padding: 12px 24px; font-size: 16px; font-weight: bold; border-radius: 8px; cursor: pointer; width: 100%; transition: opacity 0.2s; }
-        button:hover { opacity: 0.9; }
+        .screen { max-width: 500px; width: 100%; text-align: center; background: var(--card-bg); padding: 30px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); margin-top: 40px; }
         .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin: 20px 0; }
         .card-box { background: #334155; padding: 20px 10px; border-radius: 8px; font-size: 24px; font-weight: bold; cursor: pointer; border: 2px solid transparent; }
         .card-box.selected { border-color: #6366f1; background: #4338ca; }
         .row-selection { display: flex; justify-content: space-around; margin: 15px 0; }
         .row-btn { width: auto; background: #334155; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; }
         .row-btn.active-btn { background: #22c55e; }
-        .payment-note { font-size: 14px; color: #94a3b8; margin-top: 15px; line-height: 1.4; }
     </style>
 </head>
 <body>
 
-    <!-- SCREEN 1: GATEWAY LOGIN -->
-    <div id="loginScreen" class="screen active">
-        <h2>Pay ₹10 to Play</h2>
-        <p>Send ₹10 via Google Pay / UPI to your UPI ID and enter the Transaction ID below as your single-use access token.</p>
-        <input type="text" id="txIdInput" placeholder="Enter Google Pay Txn ID">
-        <button onclick="verifyPayment()">Unlock Game</button>
-        <p class="payment-note">⚠️ Logging out or closing the session will consume your token. You must repay to play again.</p>
-    </div>
-
-    <!-- SCREEN 2: THE CARD MAGIC GAME -->
+    <!-- GAMEPLAY VIEW LOCKED TO VISIBLE AUTOMATICALLY -->
     <div id="gameScreen" class="screen">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
             <h3 style="margin:0;">Phonetic Matrix</h3>
-            <button onclick="logout()" style="width:auto; padding:6px 12px; background:#ef4444; font-size:12px;">Logout</button>
         </div>
         <div id="instructions">Remember 1 pair of matching cards, then click Next.</div>
         <div id="cardDisplay" class="grid"></div>
@@ -57,78 +41,6 @@
     </div>
 
     <script>
-        const SUPABASE_URL = "https://hillqczttgamaxsqdsod.supabase.co";
-        const SUPABASE_KEY = "sb_publishable_JraFGI8YYVkddUZ2o5GH0Q_P_9n1QaD";
-        
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-            auth: { persistSession: false }
-        });
-
-        let sessionToken = localStorage.getItem("activeSession");
-        if(sessionToken) {
-            document.getElementById('loginScreen').classList.remove('active');
-            document.getElementById('gameScreen').classList.add('active');
-            initGame();
-        }
-
-        async function verifyPayment() {
-            const txId = document.getElementById('txIdInput').value.trim();
-            if(!txId) return alert("Please enter a Transaction ID");
-
-            if(txId === "test12345") { 
-                proceedToGame(txId); 
-                return; 
-            }
-
-            try {
-                const { data, error } = await supabase
-                    .from('transactions')
-                    .select('*')
-                    .eq('txn_id', txId);
-
-                if (error) {
-                    alert("Database connection error: " + error.message);
-                    return;
-                }
-
-                if (!data || data.length === 0) {
-                    alert("Invalid Transaction ID! Make sure it matches your Supabase table perfectly.");
-                    return;
-                }
-
-                // FIXED: Now accurately targeting the object payload index wrapper array mapping
-                const record = data[0];
-
-                if (record.used === true) {
-                    alert("This Transaction ID has already been used once! Repay to play again.");
-                    return;
-                }
-
-                await supabase
-                    .from('transactions')
-                    .update({ used: true, used_at: new Date().toISOString() })
-                    .eq('txn_id', txId);
-
-                proceedToGame(txId);
-
-            } catch (err) {
-                alert("Validation processing error occurred.");
-                console.error(err);
-            }
-        }
-
-        function proceedToGame(token) { 
-            localStorage.setItem("activeSession", token); 
-            document.getElementById('loginScreen').classList.remove('active'); 
-            document.getElementById('gameScreen').classList.add('active'); 
-            initGame(); 
-        } 
-
-        function logout() { 
-            localStorage.removeItem("activeSession"); 
-            window.location.reload(); 
-        } 
-
         const originalFormula = [ 
             ['H','A','R','I','HI','T','CHHE'], 
             ['P','A','CHHI','BHA','JA','JE'], 
@@ -199,6 +111,9 @@
             alert("The magic matrix computed your thoughts! Check your grid configuration."); 
             initGame(); 
         } 
+
+        // Start game immediately on launch
+        initGame();
 
         if ('serviceWorker' in navigator) { 
             navigator.serviceWorker.register('sw.js'); 
