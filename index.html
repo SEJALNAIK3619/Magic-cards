@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,8 +6,7 @@
     <title>Phonetic Card Magic</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#4F46E5">
-    <!-- Load modern Supabase JS framework client safely -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://jsdelivr.net"></script>
     <style>
         :root { --primary: #4f46e5; --bg: #0f172a; --card-bg: #1e293b; }
         body { margin: 0; font-family: system-ui, sans-serif; background: var(--bg); color: #fff; display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding: 20px; box-sizing: border-box; }
@@ -59,32 +57,19 @@
     </div>
 
     <script>
-        const SUPABASE_URL = "https://hillqczttgamaxsqdsod.supabase.co";
+        // Filled with your exact live project settings
+        const SUPABASE_URL = "https://supabase.co";
         const SUPABASE_KEY = "sb_publishable_JraFGI8YYVkddUZ2o5GH0Q_P_9n1QaD";
-        let supabase = null;
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+            auth: { persistSession: false }
+        });
 
-        // Secure Asynchronous Failover Initialization for modern CDN formats
-        function getSupabaseClient() {
-            if (supabase) return supabase;
-            if (window.supabase && typeof window.supabase.createClient === 'function') {
-                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-                return supabase;
-            }
-            return null;
-        }
-
-        // Auto login sequence
         let sessionToken = localStorage.getItem("activeSession");
         if(sessionToken) {
             document.getElementById('loginScreen').classList.remove('active');
             document.getElementById('gameScreen').classList.add('active');
-            // Graceful waiting sequence if initialization delays
-            const checkInit = setInterval(() => {
-                if (getSupabaseClient() || window.supabase) {
-                    clearInterval(checkInit);
-                    initGame();
-                }
-            }, 100);
+            initGame();
         }
 
         async function verifyPayment() {
@@ -96,27 +81,20 @@
                 return; 
             }
 
-            const client = getSupabaseClient();
-            if(!client) {
-                alert("Database engine syncing. Please wait 2 seconds and tap again.");
-                return;
-            }
-
             try {
-                // Fetch transactional tracking log safely
-                const { data, error } = await client
+                const { data, error } = await supabase
                     .from('transactions')
                     .select('*')
                     .eq('txn_id', txId);
 
                 if (error) {
-                    console.error("Database connection error:", error);
-                    alert("Database policy block! Make sure your Supabase RLS Read/Update policies are enabled.");
+                    alert("Database connection error! Check your network connection.");
+                    console.error(error);
                     return;
                 }
 
                 if (!data || data.length === 0) {
-                    alert("Invalid Transaction ID! Make sure it matches your Supabase table precisely.");
+                    alert("Invalid Transaction ID! Make sure it matches your Supabase table perfectly.");
                     return;
                 }
 
@@ -127,8 +105,7 @@
                     return;
                 }
 
-                // Burn access token key parameter state changes instantly
-                await client
+                await supabase
                     .from('transactions')
                     .update({ used: true, used_at: new Date().toISOString() })
                     .eq('txn_id', txId);
@@ -136,8 +113,8 @@
                 proceedToGame(txId);
 
             } catch (err) {
-                console.error("System crash: ", err);
-                alert("Something went wrong. Check your browser console logs.");
+                alert("An unexpected validation failure occurred. Check browser console.");
+                console.error(err);
             }
         }
 
@@ -147,24 +124,24 @@
             document.getElementById('gameScreen').classList.add('active'); 
             initGame(); 
         } 
-        
+
         function logout() { 
             localStorage.removeItem("activeSession"); 
             window.location.reload(); 
-        }
+        } 
 
-        // --- MIND READING MATRIX SHUFFLE LOGIC ---
         const originalFormula = [ 
             ['H','A','R','I','HI','T','CHHE'], 
             ['P','A','CHHI','BHA','JA','JE'], 
             ['SHU','BHA','RA','SA','LE'], 
             ['DA','LA','P','A','TA','DE'] 
         ]; 
+        
         let dynamicRows = []; 
         let generatedPairs = []; 
         let step = 1; 
         let selectedRows = []; 
-        const cardPool = ["🃏","🎨","🎭","🎬","🎤","🎧","🎸","🎹","🎺","violin","🎲","🎯","🎳","🎮","🎰","🚗","🚀","🛸","💎","👑"]; 
+        const cardPool = ["🃏","🎨","🎭","🎬","🎤","🎧","🎸","🎹","🎺","🎻","🎲","🎯","🎳","🎮","🎰","🚗","🚀","🛸","💎","👑"]; 
 
         function shuffle(array) { 
             return array.sort(() => Math.random() - 0.5); 
@@ -178,13 +155,13 @@
             document.getElementById('actionBtn').style.display = 'block'; 
             document.getElementById('instructions').innerText = "Look at the 10 pairs below. Memorize exactly ONE pair, then click Next Step."; 
             
-            // Randomize grid positions entirely so trick calculation remains completely hidden
             dynamicRows = shuffle([...originalFormula]); 
             let shuffledCards = shuffle([...cardPool]); 
             generatedPairs = []; 
             for(let i=0; i<10; i++) { 
                 generatedPairs.push([shuffledCards[i*2], shuffledCards[i*2+1]]); 
             } 
+            
             const container = document.getElementById('cardDisplay'); 
             container.innerHTML = ''; 
             generatedPairs.forEach(pair => { 
@@ -227,4 +204,6 @@
         if ('serviceWorker' in navigator) { 
             navigator.serviceWorker.register('sw.js'); 
         } 
-    </script> </body> </html>
+    </script> 
+</body> 
+</html>
