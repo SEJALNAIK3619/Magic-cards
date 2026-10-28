@@ -60,12 +60,12 @@
 </head>
 <body>
 
-  <!-- SCREEN 1: GATEWAY ACCESS SYSTEM -->
+  <!-- SCREEN 1: STANDALONE LOGIN SYSTEM -->
   <div id="loginScreen" class="screen active">
     <h2>Unlock Phonetic Matrix</h2>
-    <p>Please enter your UPI / Google Pay Transaction ID (₹10 entry token fee) to proceed.</p>
-    <input type="text" id="txIdInput" placeholder="Enter Transaction ID" autocomplete="off">
-    <button id="unlockBtn" onclick="verifyPayment()">Verify & Play</button>
+    <p>Please enter the access password to play.</p>
+    <input type="password" id="passwordInput" placeholder="Enter Password" autocomplete="current-password">
+    <button id="unlockBtn" onclick="verifyPassword()">Unlock & Play</button>
     <div id="statusMsg" class="status-msg"></div>
   </div>
 
@@ -103,89 +103,48 @@
     </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
-    // --- CONNECTIVITY PARAMETERS Hub ---
-    const SUPABASE_URL = "https://hiilqczttgamaxsqdsod.supabase.co";
-    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhpbGxxY3p0dGdhbWF4c3Fkc29kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMwNTc1OTEsImV4cCI6MjEwODYzMzU5MX0.K0dkV4wPrvfv17GjOapfXOILtydkrwSlBjbg1-WBwgw";
-    
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-      auth: { persistSession: true }
-    });
+    // --- STANDALONE CONFIGURATION ---
+    const ACCESS_PASSWORD = "magic"; // Change this to your preferred password
 
-    let sessionToken = localStorage.getItem("activeSession");
-    if(sessionToken) {
+    // Check existing login session on page load
+    if (localStorage.getItem("isLoggedIn") === "true") {
       document.getElementById('loginScreen').classList.remove('active');
       document.getElementById('gameScreen').classList.add('active');
       initGame();
     }
 
-    async function verifyPayment() {
-      const txId = document.getElementById('txIdInput').value.trim();
-      const inputField = document.getElementById('txIdInput');
-      const unlockBtn = document.getElementById('unlockBtn');
+    function verifyPassword() {
+      const passwordInput = document.getElementById('passwordInput');
       const statusMsg = document.getElementById('statusMsg');
+      const enteredPassword = passwordInput.value;
 
-      if(!txId) return alert("Please enter a Transaction ID");
-
-      if(txId === "test12345") { 
-        proceedToGame(txId); 
-        return; 
+      if (!enteredPassword) {
+        alert("Please enter a password");
+        return;
       }
 
-      inputField.disabled = true;
-      unlockBtn.disabled = true;
-      statusMsg.className = "status-msg status-loading";
-      statusMsg.innerText = "Verifying token records...";
-
-      try {
-        const { data, error } = await supabase
-          .from('transactions')
-          .select('*')
-          .eq('txn_id', txId);
-
-        if (error) throw error;
-
-        if (!data || data.length === 0) {
-          throw new Error("Transaction ID not found. Verify ledger entry.");
-        }
-
-        const record = data[0];
-        if (record.used === true) {
-          throw new Error("This access token has already been spent.");
-        }
-
-        const { error: updateError } = await supabase
-          .from('transactions')
-          .update({ used: true, used_at: new Date().toISOString() })
-          .eq('id', record.id);
-
-        if (updateError) throw updateError;
-
+      if (enteredPassword === ACCESS_PASSWORD) {
         statusMsg.style.color = "var(--primary)";
-        statusMsg.innerText = "Success! Building layout matrix...";
+        statusMsg.innerText = "Success! Loading game...";
+        
+        localStorage.setItem("isLoggedIn", "true");
         
         setTimeout(() => {
-          proceedToGame(txId);
-        }, 800);
-
-      } catch (err) {
+          document.getElementById('loginScreen').classList.remove('active');
+          document.getElementById('gameScreen').classList.add('active');
+          initGame();
+          passwordInput.value = "";
+          statusMsg.innerText = "";
+        }, 600);
+      } else {
         statusMsg.className = "status-msg status-error";
-        statusMsg.innerText = err.message || "Network validation error.";
-        inputField.disabled = false;
-        unlockBtn.disabled = false;
+        statusMsg.innerText = "Incorrect password. Access denied.";
       }
     }
 
-    function proceedToGame(token) { 
-      localStorage.setItem("activeSession", token); 
-      document.getElementById('loginScreen').classList.remove('active'); 
-      document.getElementById('gameScreen').classList.add('active'); 
-      initGame(); 
-    } 
-
     function logout() { 
-      localStorage.removeItem("activeSession"); 
+      localStorage.removeItem("isLoggedIn"); 
       window.location.reload(); 
     } 
 
@@ -197,9 +156,9 @@
       ['D', 'L', 'P', 'T', 'D'] 
     ]; 
     
-    let liveMatrixGrid =; 
+    let liveMatrixGrid = []; 
     let sessionPairs = {}; 
-    let rowShuffleOrder =; 
+    let rowShuffleOrder = []; 
 
     function renderCardDOM(cardObj) {
       const isRed = cardObj.suit === "♦" || cardObj.suit === "♥";
@@ -215,7 +174,7 @@
     function createShuffledDeck() { 
       const suits = ["♦", "♥", "♣", "♠"];
       const values = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
-      const deck =;
+      const deck = [];
       for (let suit of suits) {
         for (let value of values) { deck.push({ suit, value }); }
       }
@@ -258,7 +217,7 @@
       });
 
       // Interchange Horizontal Matrix Rows Positions (Rule 1)
-      rowShuffleOrder =;
+      rowShuffleOrder = [0, 1, 2, 3];
       for (let i = rowShuffleOrder.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [rowShuffleOrder[i], rowShuffleOrder[j]] = [rowShuffleOrder[j], rowShuffleOrder[i]];
@@ -295,7 +254,7 @@
       let identifiedKey = null;
 
       if (originalFormulaRowsSelected.length === 1) {
-        const singleRowIdx = originalFormulaRowsSelected;
+        const singleRowIdx = originalFormulaRowsSelected[0];
         const keyOccurrences = {};
         BASE_FORMULA_MAP[singleRowIdx].forEach(k => {
           keyOccurrences[k] = (keyOccurrences[k] || 0) + 1;
