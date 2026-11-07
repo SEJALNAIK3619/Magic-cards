@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Phonetic Card Magic PWA</title>
+  <!-- Link the manifest config file -->
+  <link rel="manifest" href="./manifest.json">
   <style>
     :root {
       --primary: #00e676;
@@ -56,6 +58,13 @@
     .row-option { display: flex; align-items: center; gap: 12px; font-size: 16px; cursor: pointer; }
     .row-option input { width: 20px; height: 20px; margin: 0; accent-color: var(--primary); }
     .reveal-banner { background: #16a34a; border: 2px solid var(--primary); border-radius: 8px; padding: 16px; margin-top: 15px; display: none; }
+
+    /* PWA Install UI Utility Elements */
+    .pwa-install-container {
+      display: none; max-width: 500px; width: 100%; background: #1e293b;
+      padding: 15px; margin-top: 20px; border-radius: 12px; box-sizing: border-box;
+      border: 1px solid #334155; text-align: left; align-items: center; justify-content: space-between;
+    }
   </style>
 </head>
 <body>
@@ -103,11 +112,56 @@
     </div>
   </div>
 
-  <script>
-    // --- STANDALONE CONFIGURATION ---
-    const ACCESS_PASSWORD = "magic"; // Change this to your preferred password
+  <!-- NATIVE PWA BOTTOM BANNER PROMPT -->
+  <div id="pwaBanner" class="pwa-install-container">
+    <div style="display:flex; align-items:center; gap:12px;">
+      <div style="font-size:24px;">📱</div>
+      <div>
+        <div style="font-weight:bold; font-size:14px;">Install App</div>
+        <div style="font-size:12px; color:#94a3b8;">Add this game to your home screen</div>
+      </div>
+    </div>
+    <button id="pwaInstallBtn" style="width:auto; padding:8px 16px; font-size:14px;">Install</button>
+  </div>
 
-    // Check existing login session on page load
+  <script>
+    // --- SERVICE WORKER & APP INSTALL CODES ---
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then(reg => console.log('Service Worker Registered Successfully', reg))
+          .catch(err => console.error('Service Worker registration broken', err));
+      });
+    }
+
+    let deferredPrompt;
+    const pwaBanner = document.getElementById('pwaBanner');
+    const pwaInstallBtn = document.getElementById('pwaInstallBtn');
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      pwaBanner.style.display = 'flex';
+    });
+
+    pwaInstallBtn.addEventListener('click', async () => {
+      if (!deferredPrompt) return;
+      pwaBanner.style.display = 'none';
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      console.log(`User installation decision outcome status: ${outcome}`);
+      deferredPrompt = null;
+    });
+
+    window.addEventListener('appinstalled', () => {
+      pwaBanner.style.display = 'none';
+      deferredPrompt = null;
+      console.log('PWA installation confirmed completed.');
+    });
+
+    // --- STANDALONE CONFIGURATION ---
+    const ACCESS_PASSWORD = "magic";
+
     if (localStorage.getItem("isLoggedIn") === "true") {
       document.getElementById('loginScreen').classList.remove('active');
       document.getElementById('gameScreen').classList.add('active');
@@ -183,9 +237,9 @@
         [deck[i], deck[j]] = [deck[j], deck[i]];
       }
       return deck;
-    } 
+    }
 
-    function initGame() { 
+    function initGame() {
       document.getElementById('revealBanner').style.display = 'none';
       document.querySelectorAll('.row-check').forEach(el => el.checked = false);
       document.getElementById('pairsStage').style.display = 'block';
@@ -225,12 +279,7 @@
       liveMatrixGrid = rowShuffleOrder.map(idx => baseGrid[idx]);
 
       const pairsDisplay = document.getElementById('pairsDisplay');
-      pairsDisplay.innerHTML = Object.values(sessionPairs).map(p => `
-        <div class="pair-bundle">
-          ${renderCardDOM(p.cardA)}
-          ${renderCardDOM(p.cardB)}
-        </div>
-      `).join('');
+      pairsDisplay.innerHTML = Object.values(sessionPairs).map(p => `<div class="pair-bundle"> ${renderCardDOM(p.cardA)} ${renderCardDOM(p.cardB)} </div>`).join('');
     }
 
     function nextStep() {
@@ -270,12 +319,7 @@
 
       if (identifiedKey && sessionPairs[identifiedKey]) {
         const secretPair = sessionPairs[identifiedKey];
-        textTarget.innerHTML = `
-          <div style="display:flex; gap:15px; justify-content:center; margin-top:10px;">
-            ${renderCardDOM(secretPair.cardA)}
-            ${renderCardDOM(secretPair.cardB)}
-          </div>
-        `;
+        textTarget.innerHTML = `<div style="display:flex; gap:15px; justify-content:center; margin-top:10px;"> ${renderCardDOM(secretPair.cardA)} ${renderCardDOM(secretPair.cardB)} </div>`;
       } else {
         textTarget.innerText = "Trick failed! Make sure you ticked all exact rows matching your selections.";
       }
@@ -283,4 +327,4 @@
     }
   </script>
 </body>
-</html>
+  </html>
